@@ -20,7 +20,7 @@ def task3():
     
 
 def main():
-    print(task1())
+    print("Array: " + str(task1()) + ", Shape: " + str(task1().shape))
     print(task2())
     print(task3())
 
