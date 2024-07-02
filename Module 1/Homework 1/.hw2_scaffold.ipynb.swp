@@ -1,0 +1,601 @@
+{
+    "metadata": {
+        "kernelspec": {
+            "name": "python3",
+            "display_name": "Python 3 (ipykernel)",
+            "language": "python"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 1,
+    "cells": [
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Assignment 1 - Ridge and LASSO Regression\n",
+                "\n",
+                "In this assignment we'll look at the affect of using regularization on linear regression models that we train. You will write code to train models that use different regularizers and different penalties to analyze how this affects the model.\n",
+                "\n",
+                "\n",
+                "Fill in the cells provided marked `TODO` with code to answer the questions. Answers should do the computation stated rather than writing in hard-coded values. So for example, if a problem asks you to compute the average age of people in a dataset, you should be writing Python code in this notebook to do the computation instead of plugging it into some calculator and saving the hard-coded answer in the variable. In other words, we should be able to run your code on a smaller/larger dataset and get correct answers for those datasets with your code.\n",
+                "\n",
+                "Note, you are not allowed to share any portions of this notebook outside of this class.\n",
+                "\n",
+                "\u003e Copyright ©2023 Emily Fox and Hunter Schafer.  All rights reserved.  Permission is hereby granted to students registered for University of Washington CSE/STAT 416 for use solely during Spring Quarter 2023 for purposes of the course.  No other use, copying, distribution, or modification is permitted without prior written consent. Copyrights for third-party components of this work must be honored.  Instructors interested in reusing these course materials should contact the author.\n",
+                "\n",
+                "---"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 16,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Conventionally people rename these common imports for brevity\n",
+                "import pandas as pd\n",
+                "import numpy as np\n",
+                "import matplotlib.pyplot as plt\n",
+                "\n",
+                "# Magic command to make the plots appear in-line (it's actually called a \"magic command\")\n",
+                "%matplotlib inline"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**NOTE**: Be sure to run every cell in the notebook! The `###SKIP` is for the autograder. "
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 17,
+            "metadata": {
+                "scrolled": true
+            },
+            "outputs": [],
+            "source": [
+                "### SKIP\n",
+                "sales = pd.read_csv('home_data.csv')\n",
+                "\n",
+                "# Set seed for the whole program\n",
+                "np.random.seed(416)"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Do not modify the below cell. It configures the autograder, which will award 0 points if it doesn't run."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 0,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_load_data) ###"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "For this assignment, we will only be using a very small subset of the data to do our analysis. This is not something you would usually do in practice, but is something we do for this assignment to simplify the complexity of this dataset. The data is pretty noisy and to get meaningful results to demonstrate the theoretical behavior, you would need to use a much more complicated set of features that would be a bit more tedious to work with.\n",
+                "\n",
+                "**NOTE**: Do NOT change `random_state=0`, else the autograder will fail."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 0,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Selects 1% of the data\n",
+                "# NOTE: Do not change the random_state=0, else the autograder will fail\n",
+                "sales = sales.sample(frac=0.01, random_state=0) \n",
+                "\n",
+                "print(f'Number of points: {len(sales)}')\n",
+                "sales.head()"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Q1 - Feature Engineering\n",
+                "First, we do a bit of feature engineering by creating features that represent the squares of each feature and the square root of each feature. One benefit of using regularization is you can include more features than necessary and you don't have to be as worried about overfitting since the model is regularized.\n",
+                "\n",
+                "In the following cell, complete the code inside the loop to compute the square of each feature the the square root of each feature. *Note*: While we did mention there are some helpful classes in scikit-learn for computing polynomial features, for this assignment we are just computing the square and the square root so we recommend writing the code in pandas yourself."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 18,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_feature_extraction) ###\n",
+                "\n",
+                "from math import sqrt\n",
+                "\n",
+                "# All of the features of interest\n",
+                "selected_inputs = [\n",
+                "    'bedrooms', \n",
+                "    'bathrooms',\n",
+                "    'sqft_living', \n",
+                "    'sqft_lot', \n",
+                "    'floors', \n",
+                "    'waterfront', \n",
+                "    'view', \n",
+                "    'condition', \n",
+                "    'grade',\n",
+                "    'sqft_above',\n",
+                "    'sqft_basement',\n",
+                "    'yr_built', \n",
+                "    'yr_renovated'\n",
+                "]\n",
+                "\n",
+                "# Compute the square and sqrt of each feature\n",
+                "# At the end of the for loop: \n",
+                "#    - sales should have additional columns for the square and \n",
+                "#      sqrt of each of the selected inputs.\n",
+                "#    - all_features should contain the names (as strings) of all \n",
+                "#      the features we care about.\n",
+                "all_features = []\n",
+                "for feature_name in selected_inputs:\n",
+                "    \n",
+                "    squared_feature_name = feature_name + '_square'\n",
+                "    sqrt_feature_name = feature_name + '_sqrt'\n",
+                "    \n",
+                "    # TODO compute the square of the column feature_name, add it to sales as a \n",
+                "    # new column, squared_feature_name\n",
+                "    \n",
+                "    \n",
+                "    # TODO compute the sqrt of the column feature_name, add it to sales as a\n",
+                "    # new column, sqrt_feature_name\n",
+                "    \n",
+                "\n",
+                "    # Add the feature names to all_features\n",
+                "    all_features.extend([feature_name, squared_feature_name, sqrt_feature_name])\n",
+                "    \n",
+                "# Split the data into features and price\n",
+                "price = sales['price']\n",
+                "sales = sales[all_features]\n",
+                "\n",
+                "sales.head()"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Split Data\n",
+                "Next, we need to split our data into our train, validation, and test data. To do this, we will use [train_test_split](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html) function to split up the dataset. For this assignment we will use 70% of the data to train, 10% for validation, and 20% to test. \n",
+                "\n",
+                "**NOTE**: Do NOT change `random_state=6`, else the autograder will fail."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 19,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "from sklearn.model_selection import train_test_split\n",
+                "\n",
+                "# NOTE: Do not change the random_state=6, else the autograder will fail\n",
+                "sales_train_and_validation, sales_test, price_train_and_validation, price_test = \\\n",
+                "    train_test_split(sales, price, test_size=0.2, random_state=6)\n",
+                "sales_train, sales_validation, price_train, price_validation = \\\n",
+                "    train_test_split(sales_train_and_validation, price_train_and_validation, test_size=.125, random_state=6) # .10 (validation) of .80 (train + validation)"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Q2 - Standardization"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "We first need to do a little bit more pre-processing to prepare the data for model training. Models like Ridge and LASSO assume the input features are standardized (mean 0, std. dev. 1) and the target values are centered (mean 0). If we do not do this, we might get some unpredictable results since we violate the assumption of the models!\n",
+                "\n",
+                "So in the next cell, you should standardize the data in train, validation, and test using the following instructions:\n",
+                "* Use the [StandardScaler](https://scikit-learn.org/stable/modules/preprocessing.html#standardization-or-mean-removal-and-variance-scaling) preprocessor provided by scikit-learn to do the standardization for you. \n",
+                "  * Note that you first `fit` it to the data so it can compute the mean/standard deviation and then `transform` to actually change the data. You'll find the examples on this documentation very helpful.\n",
+                "* You should only do this transformation on the features we are using of the data (not any of the other data inputs or the target values). \n",
+                "* This next note will sound a bit weird, but it's an important step. **You should only do the standardization calculation (e.g., the mean and the standard deviation) on the *training* set and use those statistics to scale the validation and test set**. In other words, the validation and test set should be standardized using the statistics from the training data so that you are using a consistent transformation throughout. This is important to do since you need to apply the same transformation process to every step of the data and you shouldn't use statistics from data outside of your training set in your transformations."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 20,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_standardization) ###\n",
+                "\n",
+                "from sklearn.preprocessing import StandardScaler\n",
+                "\n",
+                "# TODO preprocess the training, validation, and test data\n",
+                "\n",
+                "sales_train_standardized = None\n",
+                "sales_validation_standardized = None\n",
+                "sales_test_standardized = None"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Linear Regression \n",
+                "## Q3) Linear Regression Baseline\n",
+                "\n",
+                "As a baseline, we will first, train a regular `LinearRegression` model on the data using the features in `all_features` and report its **test RMSE**. Write the code in the cell below to calculate the answer. Save your result in a variable named `test_rmse_unregularized`.\n",
+                ""
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 21,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_train_linear_regression) ###\n",
+                "\n",
+                "from sklearn.linear_model import LinearRegression\n",
+                "from sklearn.metrics import mean_squared_error\n",
+                "\n",
+                "# TODO Train a linear regression model\n",
+                "\n",
+                "rmse_test_unregularized = None\n",
+                "print(\"Test RMSE\", rmse_test_unregularized)"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "--- \n",
+                "# Ridge Regression\n",
+                "At this point, you might be looking forward at the homework and seeing how long it is! We want to provide a lot of instruction so you aren't left completely in the dark on what to do, but we are also trying to avoid just giving you a bunch of starter code and just having you fill in the blanks. This section is very long because it tries to give really detailed instructions on what to compute. The next section on LASSO has almost exactly the same steps so it will be a lot easier doing that part of the assignment!\n",
+                "\n",
+                "In this section, we will do some **hyper-parameter tuning** to find the optimal setting of the regularization constant $\\lambda$ for Ridge Regression. Remember that $\\lambda$ is the coefficient that controls how much the model is penalized for having large weights in the optimization function.\n",
+                "\n",
+                "$$\\hat{w}_{ridge} = \\min_w MSE(w) + \\lambda \\left\\lVert w \\right\\rVert_2^2$$\n",
+                "\n",
+                "where $\\left\\lVert w \\right\\rVert_2^2 = \\sum_{j=1}^D w_j^2$ is the $l_2$-norm of the parameters. By default, `sklearn`'s `Ridge` class does not regularize the intercept.\n",
+                "\n",
+                "## Q4) Train Ridge Models\n",
+                "For this part of the assignment, you will be writing code to find the optimal setting of the penalty $\\lambda$. Below, we describe what steps you will want to have in your code to compute these values:\n",
+                "\n",
+                "*Implementation Details*\n",
+                "* Use the following choices of $l_2$ penalty: $[10^{-5}, 10^{-4}, ..., 10^4, 10^5]$. In Python, you can create a list of these numbers using `np.logspace(-5, 5, 11, base=10)`. \n",
+                "* Use the [Ridge](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html#sklearn.linear_model.Ridge) class from sklearn to train a Ridge Regression model on the **training** data. The **only** arguments you need to pass when constructing the Ridge model are $\\lambda$, which lets you specify what you want the $l_2$ penalty to be. (NOTE: sklearn's Ridge class uses `alpha` instead of `lambda`; only the name is different but they function in the same way.)\n",
+                "* Evaluate both the training error and the validation error for the model by reporting the **RMSE** of each dataset.\n",
+                "* **Put all of your results in a pandas `DataFrame` named `ridge_data`** so you can analyze them later. The `ridge_data` should have a row for each $l_2$ penalty you tried and should have the following columns:\n",
+                "  * `l2_penalty`: The $l_2$ penalty for that row\n",
+                "  * `model`: The actual `Ridge` model object that was trained with that $l_2$ penalty\n",
+                "  * `rmse_train`: The training RMSE for that model\n",
+                "  * `rmse_validation`: The validation RMSE for that model\n",
+                "* To build up this `DataFrame`, we recommend first building up a list of dictionary objects and then converting that to a `DataFrame`. For example, the following code would produce the following `pandas.DataFrame`.\n",
+                "\n",
+                "  ```python\n",
+                "  data = []\n",
+                "  for i in range(3):\n",
+                "      data.append({\n",
+                "          'col_a': i,\n",
+                "          'col_b': 2 * i\n",
+                "      }\n",
+                "  data_frame = pd.DataFrame(data)\n",
+                "  ```\n",
+                "\n",
+                "  | col_a | col_b | \n",
+                "  |-------|-------|\n",
+                "  |   0   |   0   | \n",
+                "  |   1   |   2   | \n",
+                "  |   2   |   4   |\n",
+                "\n",
+                "*Hints: Here is a development strategy that you might find helpful*\n",
+                "* You will need a loop to loop over the possible $l_2$ penalties. Try writing the code without a loop first with just one setting of $\\lambda$. Try writing a lot of the code without a loop first if you're stuck to help you figure out how the pieces go together. You can safely ignore building up the result `DataFrame` at first, just print all the information out to start! \n",
+                "* If you are running into troubles writing your loop, try to print values out to investigate what's going wrong.\n",
+                "* Remember to use RMSE for calculating the error!\n",
+                ""
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 22,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_ridge) ###\n",
+                "\n",
+                "from sklearn.linear_model import Ridge\n",
+                "\n",
+                "l2_lambdas = np.logspace(-5, 5, 11, base = 10)\n",
+                "\n",
+                "# TODO Implement code to evaluate Ridge Regression with various l2 Penalties\n",
+                "# Note that Ridge uses \"alpha\" to refer to the variable we have been calling \"lambda\"\n",
+                "\n",
+                "ridge_data = None\n",
+                "ridge_data"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Next, let's investigate how the penalty affects the train and validation error by running the following plotting code. "
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 23,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Plot the validation RMSE as a blue line with dots\n",
+                "plt.plot(ridge_data['l2_penalty'], ridge_data['rmse_validation'], \n",
+                "         'b-^', label='Validation')\n",
+                "# Plot the train RMSE as a red line dots\n",
+                "plt.plot(ridge_data['l2_penalty'], ridge_data['rmse_train'], \n",
+                "         'r-o', label='Train')\n",
+                "\n",
+                "# Set y-limits\n",
+                "rmse_max = max(ridge_data['rmse_train'].max(), ridge_data['rmse_validation'].max())\n",
+                "rmse_max *= 1.1  # Give a little buffer\n",
+                "plt.ylim(0, rmse_max)\n",
+                "\n",
+                "# Make the x-axis log scale for readability\n",
+                "plt.xscale('log')\n",
+                "\n",
+                "# Label the axes and make a legend\n",
+                "plt.xlabel('l2_penalty (log scale)')\n",
+                "plt.ylabel('RMSE')\n",
+                "plt.legend()"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Next, we want to actually look at which model we think will perform best. First we define a helper function that will be used to inspect the model parameters."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 24,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "def print_coefficients(model, features):\n",
+                "    \"\"\"\n",
+                "    This function takes in a model column and a features column. \n",
+                "    And prints the coefficient along with its feature name.\n",
+                "    \"\"\"\n",
+                "    feats = list(zip(features, model.coef_))\n",
+                "    print(*feats, sep = \"\\n\")"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Q5 - Inspecting Coefficients\n",
+                "In the cell below, write code that uses the `ridge_data` `DataFrame` to select which L2 penalty we would choose based on the evaluations we did in the previous section. Compute the following: \n",
+                "\n",
+                "* **Q5.1** -  The best L2 penalty based on the model evaluations. Save this L2 penalty in a variable called `best_l2`.\n",
+                "* **Q5.2** - The best model's error on the **test** dataset. Report the number as an RMSE stored in a variable called `rmse_test_ridge`.\n",
+                "* **Q5.3** The number of coefficients in the best model that are 0. Save this in a variable called `num_zero_coeffs_ridge`. Use the `print_coefficients` function to help you check your result.\n",
+                "\n",
+                "Recall that you **may NOT hardcode** values and must instead write code to compute the values; we are testing the data on a slightly different dataset, so hardcoded values from this dataset will be marked as wrong.\n",
+                "\n",
+                "Use the next cell answer all three questions. You should also print out the values so you can inspect them.\n",
+                "\n",
+                "### Tip\n",
+                "\n",
+                "A `pandas` `DataFrame` has a method `idxmin()` function to find the index of the smallest value in a column, and a property `loc` to access a sepcified index. As an example, suppose we had a `DataFrame` named `df`:\n",
+                "\n",
+                "| a | b | c |\n",
+                "|---|---|---|\n",
+                "| 1 | 2 | 3 |\n",
+                "| 2 | 1 | 3 |\n",
+                "| 3 | 2 | 1 |\n",
+                "\n",
+                "If we wrote the code \n",
+                "```python\n",
+                "index = df['b'].idxmin()\n",
+                "row = df.loc[index]\n",
+                "```\n",
+                "\n",
+                "It would first find the index of the smallest value in the `b` column and then uses the `.loc` property of the `DataFrame` to access that particular row. It will return a `Series` object (basically a Python dictionary) which means you can use syntax like `row['a']` to access a particular column of that row."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 25,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_ridge_analysis) ###\n",
+                "\n",
+                "# TODO Print information about best l2 model\n",
+                "best_l2 = None\n",
+                "rmse_test_ridge = None\n",
+                "num_zero_coeffs_ridge = None\n",
+                "\n",
+                "# Print your results to help you check their correctness.\n",
+                "print('L2 Penalty',  best_l2)\n",
+                "print('Test RSME', rmse_test_ridge)\n",
+                "print('Num Zero Coeffs', num_zero_coeffs_ridge)"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "--- \n",
+                "# LASSO Regression\n",
+                "In this section you will do basically the exact same analysis you did with Ridge Regression, but using LASSO Regression instead. It's okay if your code for this section looks very similar to your code for the last section. \n",
+                "\n",
+                "Remember that for LASSO we choose the parameters that minimize this quality metric instead \n",
+                "\n",
+                "$$\\hat{w}_{LASSO} = \\min_w MSE(w) + \\lambda \\left\\lVert w \\right\\rVert_1$$\n",
+                "\n",
+                "where $\\left\\lVert w \\right\\rVert_1 = \\sum_{j=1}^D | w_j |$ is the L1 norm of the parameter vector.\n",
+                "\n",
+                "## Q6) Train LASSO Models\n",
+                "We will use the same set of instructions for LASSO as we did for Ridge, except for the following differences. Please refer back to the Ridge Regression instructions and your code to see how these differences fit in!\n",
+                "\n",
+                "* Use the [Lasso](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html#sklearn.linear_model.Lasso) model. Like before, the only parameters you need to pass in are $\\lambda$ for the L1 penalty. Like before, sklearn uses the parameter `alpha` instead of `lambda`, but it does the same thing as the `lambda` we discussed in class.\n",
+                "* The range L1 penalties should be $[10, 10^2, ..., 10^7]$. In Python, this is `np.logspace(1, 7, 7, base=10)`.\n",
+                "* The result should be stored in a `DataFrame` named `lasso_data`. All the columns should have the same name and corresponding values except the penalty column should be called `l1_penalty`.\n",
+                "* It is okay if your code prints some `ConvergenceWarning` warnings, these should not impact your results!.\n",
+                "\n",
+                "You do not need to worry about your code being redundant with the last section for this part."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 26,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_lasso) ###\n",
+                "\n",
+                "from sklearn.linear_model import Lasso\n",
+                "\n",
+                "l1_lambdas = np.logspace(1, 7, 7, base=10)\n",
+                "\n",
+                "# TODO Implement code to evaluate LASSO Regression with various L1 penalties\n",
+                "\n",
+                "lasso_data = None\n",
+                "lasso_data"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Like before, let's look at how the L1 penalty affects the performance."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 27,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Plot the validation RMSE as a blue line with dots\n",
+                "\n",
+                "plt.plot(lasso_data['l1_penalty'], lasso_data['rmse_validation'],\n",
+                "         'b-^', label='Validation')\n",
+                "\n",
+                "# Plot the train RMSE as a red line dots\n",
+                "plt.plot(lasso_data['l1_penalty'], lasso_data['rmse_train'],\n",
+                "         'r-o', label='Train')\n",
+                "\n",
+                "# Set y-limits\n",
+                "rmse_max = max(lasso_data['rmse_train'].max(), lasso_data['rmse_validation'].max())\n",
+                "rmse_max *= 1.1  # Give a little buffer\n",
+                "plt.ylim(0, rmse_max)\n",
+                "\n",
+                "# Make the x-axis log scale for readability\n",
+                "plt.xscale('log')\n",
+                "\n",
+                "# Label the axes and make a legend\n",
+                "plt.xlabel('l1_penalty (log scale)')\n",
+                "plt.ylabel('RMSE')\n",
+                "plt.legend()"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Q7 - Inspecting Coefficients\n",
+                "Like before, in the cell below, write code that uses the `lasso_data` `DataFrame` to select which L1 penalty we would choose based on the evaluations we did in the previous section. Compute the following:\n",
+                "\n",
+                "* **Q7.1** -  The best L1 penalty based on the model evaluations. Save this L1 penalty in a variable called `best_l1`.\n",
+                "* **Q7.2** - The best model's error on the **test** dataset. Report the number as an RMSE stored in a variable called `rmse_test_lasso`.\n",
+                "* **Q7.3** - The number of coefficients in the best model that are 0. Store this in a variable called `num_zero_coeffs_lasso`. Note that `-0.0` and `0.0` are the same for our purposes. Use the `print_coefficients` function to help you check your result."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 28,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_lasso_analysis) ###\n",
+                "\n",
+                "# TODO Print information about best L1 model\n",
+                "best_l1 = None\n",
+                "rmse_test_lasso = None\n",
+                "num_zero_coeffs_lasso = None\n",
+                "\n",
+                "# Print your results to help you check their correctness.\n",
+                "print('Best L1 Penalty', best_l1)\n",
+                "print('Test RMSE', rmse_test_lasso)\n",
+                "print('Num Zero Coeffs', num_zero_coeffs_lasso)"
+            ]
+        },
+        {
+            "attachments": {},
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Q7.4 -** Let's look at which coefficients ended up having a 0 coefficient. In the cell below, we print the name of all features with coefficient 0. Note, we actually have to check if it is near 0 since numeric computations in Python sometimes yield slight rounding errors (e.g., how 1/3 is .333333333333 and that can't be represented precisely in a computer)\n",
+                ""
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 1,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "### edTest(test_best_model_lasso) ###\n",
+                "\n",
+                "# TODO: Use code like from the above cell to get the best model.\n",
+                "best_model_lasso = None\n",
+                "\n",
+                "zero_coef_features = []\n",
+                "nonzero_coef_features = []\n",
+                "for feature, coef in zip(all_features, best_model_lasso.coef_):\n",
+                "  if abs(coef) \u003c= 10 ** -17:\n",
+                "    zero_coef_features.append(feature)\n",
+                "  else:\n",
+                "    nonzero_coef_features.append(feature)\n",
+                "\n",
+                "print(\"Features with coefficient == 0:\", zero_coef_features)\n",
+                "print(\"Features with coefficient != 0:\", nonzero_coef_features)"
+            ]
+        }
+    ]
+}
