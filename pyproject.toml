@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "cse416"
+version = "1.0.0"
+description = "UW CSE 416 Course Files"
+authors = ["Piyush Acharya <acharyapiyush1@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.7+"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
