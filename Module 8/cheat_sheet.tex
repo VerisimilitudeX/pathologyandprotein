@@ -1,0 +1,555 @@
+\documentclass{article}
+\usepackage{amsmath}
+\documentclass[8pt]{extarticle}
+\usepackage[fontsize=8pt]{fontsize}
+\usepackage{amssymb}
+
+\title{CSE/STAT 416 - Comprehensive Review Notes}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Linear Regression Model}
+
+\subsection{Fitting a regression model}
+\begin{enumerate}
+    \item Find the best line: $\text{RSS}(w_0, w_1) = \sum_{i=1}^N (y_i - [w_0 + w_1x_i])^2$ (quality metric)
+    \begin{itemize}
+        \item RSS (Residual Sum of Squares) measures the total squared difference between predicted and actual values
+        \item Minimizing RSS is equivalent to finding the best-fitting line
+    \end{itemize}
+    
+    \item Gradient Descent
+    \begin{itemize}
+        \item An iterative optimization algorithm used to find the minimum of a function
+        \item Updates parameters in the opposite direction of the gradient of the loss function
+        \item Learning rate determines the step size at each iteration
+    \end{itemize}
+    
+    \item Regression model: $y_i = w_0 + w_1x_i + \epsilon_i$ 
+    \begin{itemize}
+        \item $w_0$: intercept (value of y when x = 0)
+        \item $w_1$: slope (change in y per unit change in x)
+        \item $\epsilon_i$: error term (captures noise and other unexplained factors)
+    \end{itemize}
+    
+    \item Polynomial regression
+    \begin{enumerate}
+        \item Parameter/Coefficient: $w_j$ (scalar)
+        \item $x[j] = j^{\text{th}}$ input (scalar)
+        \item $h_j(x) = j^{\text{th}}$ feature (scalar)
+        \item $x_i = $ input of $i^{\text{th}}$ data point (vector)
+        \item $x_i[j] = j^{\text{th}}$ input of $i^{\text{th}}$ data point (scalar)
+    \end{enumerate}
+    
+    \item General model: $y_i = w_0h_0(x_i) + w_1h_1(x_i) + \ldots + w_Dh_D(x_i) + \epsilon_i = \sum_{j=0}^D w_jh_j(x_i) + \epsilon_i$
+    \begin{itemize}
+        \item Allows for more complex relationships between inputs and outputs
+        \item Can capture non-linear patterns in the data
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Assessing the model}
+\begin{enumerate}
+    \item Loss functions:
+    \begin{itemize}
+        \item Squared error: $(y_i - f(x_i))^2$
+            \begin{itemize}
+                \item Penalizes large errors more heavily
+                \item Sensitive to outliers
+            \end{itemize}
+        \item Absolute error: $|y_i - f(x_i)|$
+            \begin{itemize}
+                \item Less sensitive to outliers compared to squared error
+                \item May be harder to optimize due to non-differentiability at zero
+            \end{itemize}
+        \item Huber loss: Combines properties of squared error and absolute error
+            \begin{itemize}
+                \item Less sensitive to outliers than squared error
+                \item Differentiable everywhere, unlike absolute error
+            \end{itemize}
+    \end{itemize}
+    
+    \item Training error: $\frac{1}{N} \sum_{i=1}^N L(y_i, f_{\hat{w}}(x_i))$
+    \begin{itemize}
+        \item Measures how well the model fits the training data
+        \item RMSE (Root Mean Squared Error) = $\sqrt{\frac{1}{N} \sum_{i=1}^N (y_i - f_w(x_i))^2}$
+            \begin{itemize}
+                \item Provides error in the same units as the target variable
+                \item Commonly used for regression problems
+            \end{itemize}
+        \item Training error vs. model complexity: typically decreases as complexity increases
+    \end{itemize}
+    
+    \item Generalization (true) error
+    \begin{itemize}
+        \item Expected error on new, unseen data
+        \item Estimated using hold-out test set or cross-validation
+        \item Generalization error vs. model complexity: U-shaped curve (bias-variance tradeoff)
+    \end{itemize}
+    
+    \item Test error: $\frac{1}{N_{\text{test}}} \sum_{i \in \text{test set}} L(y_i, f_{\hat{w}}(x_i))$ (fit using training data)
+    \begin{itemize}
+        \item Provides an unbiased estimate of the model's performance on new data
+        \item Should only be used once model selection and hyperparameter tuning are complete
+    \end{itemize}
+    
+    \item Sources of error
+    \begin{enumerate}
+        \item Noise (Irreducible Error, $\epsilon_i$)
+            \begin{itemize}
+                \item Inherent variability in the data that cannot be explained by the model
+                \item Sets a lower bound on the achievable error
+            \end{itemize}
+        \item Bias
+            \begin{itemize}
+                \item Error due to overly simplistic assumptions in the learning algorithm
+                \item High bias (underfitting): model is too simple to capture the underlying pattern
+                \item Low bias: model can capture complex patterns but may overfit
+            \end{itemize}
+        \item Variance
+            \begin{itemize}
+                \item Error due to the model's sensitivity to small fluctuations in the training set
+                \item High variance (overfitting): model captures noise in the training data
+                \item Low variance: model is more stable but may underfit
+            \end{itemize}
+    \end{enumerate}
+\end{enumerate}
+
+\subsection{Regularization}
+
+\subsubsection{Ridge regression (L2 regularization)}
+\begin{enumerate}
+    \item Adds penalty term to the loss function: $\lambda \sum_{j=1}^p w_j^2$
+    \item Objective: minimize $\text{RSS}(w) + \lambda \sum_{j=1}^p w_j^2$
+    \item Effect of $\lambda$:
+    \begin{itemize}
+        \item Large $\lambda$: High bias, low variance (strong regularization)
+        \item Small $\lambda$: Low bias, high variance (weak regularization)
+        \item $\lambda = 0$: Equivalent to standard least squares
+    \end{itemize}
+    \item Coefficient path: Coefficients converge to 0 as $\lambda$ increases but never become exactly 0
+    \item Helps prevent overfitting by shrinking coefficients towards zero
+\end{enumerate}
+
+\subsubsection{Lasso Regression (L1 regularization)}
+\begin{enumerate}
+    \item Adds penalty term to the loss function: $\lambda \sum_{j=1}^p |w_j|$
+    \item Objective: minimize $\text{RSS}(w) + \lambda \sum_{j=1}^p |w_j|$
+    \item Coefficient path: Features become exactly 0 as $\lambda$ increases
+    \item Feature selection property: Can produce sparse models by setting some coefficients to exactly zero
+    \item Useful when dealing with high-dimensional data or when feature selection is desired
+\end{enumerate}
+
+\section{Classification}
+
+\subsection{Evaluation Metrics}
+\begin{enumerate}
+    \item Accuracy = $\frac{\text{Number of correct predictions}}{\text{Total number of predictions}}$
+    \begin{itemize}
+        \item Simple and intuitive measure of model performance
+        \item Can be misleading for imbalanced datasets
+    \end{itemize}
+    
+    \item Error rate = $\frac{\text{Number of incorrect predictions}}{\text{Total number of predictions}} = 1 - \text{Accuracy}$
+    
+    \item Confusion Matrix
+    \begin{itemize}
+        \item A table that describes the performance of a classification model
+        \item Rows represent actual classes, columns represent predicted classes
+        \item Entries: True Positives (TP), False Positives (FP), True Negatives (TN), False Negatives (FN)
+    \end{itemize}
+    
+    \item Precision = $\frac{\text{TP}}{\text{TP} + \text{FP}}$
+    \begin{itemize}
+        \item Measures the accuracy of positive predictions
+        \item Important when the cost of false positives is high
+    \end{itemize}
+    
+    \item Recall (Sensitivity) = $\frac{\text{TP}}{\text{TP} + \text{FN}}$
+    \begin{itemize}
+        \item Measures the proportion of actual positives correctly identified
+        \item Important when the cost of false negatives is high
+    \end{itemize}
+    
+    \item F1 Score = $2 * \frac{\text{Precision} * \text{Recall}}{\text{Precision} + \text{Recall}}$
+    \begin{itemize}
+        \item Harmonic mean of precision and recall
+        \item Provides a single score that balances both precision and recall
+    \end{itemize}
+    
+    \item ROC (Receiver Operating Characteristic) Curve
+    \begin{itemize}
+        \item Plots True Positive Rate vs. False Positive Rate at various threshold settings
+        \item AUC (Area Under the Curve) summarizes the model's performance in a single number
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Logistic Regression}
+\begin{enumerate}
+    \item Model: $P(y=+1|x_i, w) = \text{sigmoid}(\text{Score}(x_i)) = \frac{1}{1 + e^{-w^T h(x)}}$
+    \begin{itemize}
+        \item Estimates the probability of an instance belonging to a particular class
+        \item Output is always between 0 and 1
+    \end{itemize}
+    
+    \item Score$(x_i) = w_0 h_0(x) + w_1 h_1(x) + ... + w_D h_D(x_i)$
+    \begin{itemize}
+        \item Linear combination of features
+        \item Passed through the sigmoid function to get probabilities
+    \end{itemize}
+    
+    \item Maximum Likelihood Estimation
+    \begin{itemize}
+        \item Objective: Maximize the likelihood of observing the data given the model parameters
+        \item Equivalent to minimizing the negative log-likelihood
+    \end{itemize}
+    
+    \item Gradient Ascent for optimization
+    \begin{itemize}
+        \item Used to find the parameters that maximize the likelihood
+        \item Updates parameters in the direction of the gradient of the log-likelihood
+    \end{itemize}
+    
+    \item Regularization for logistic regression
+    \begin{itemize}
+        \item L1 (Lasso) and L2 (Ridge) regularization can be applied to logistic regression
+        \item Helps prevent overfitting, especially in high-dimensional spaces
+    \end{itemize}
+    
+    \item Overfitting in logistic regression
+    \begin{itemize}
+        \item Can occur when the model is too complex relative to the amount of training data
+        \item Signs include large coefficient values and overconfident predictions
+    \end{itemize}
+\end{enumerate}
+
+\section{Decision Trees}
+\begin{enumerate}
+    \item Splitting criteria
+    \begin{itemize}
+        \item Gini impurity: Measures the probability of incorrectly classifying a randomly chosen element
+        \item Entropy and Information Gain: Measures the reduction in uncertainty achieved by a split
+    \end{itemize}
+    
+    \item Recursive splitting
+    \begin{itemize}
+        \item Process of creating child nodes by splitting on the best feature at each step
+        \item Continues until a stopping condition is met
+    \end{itemize}
+    
+    \item Stopping conditions
+    \begin{itemize}
+        \item Maximum depth reached
+        \item Minimum number of samples in a leaf node
+        \item No improvement in the splitting criterion
+    \end{itemize}
+    
+    \item Pruning
+    \begin{itemize}
+        \item Process of removing branches that do not provide significant predictive power
+        \item Helps prevent overfitting
+    \end{itemize}
+    
+    \item Advantages of decision trees
+    \begin{itemize}
+        \item Easy to interpret and explain
+        \item Can handle both numerical and categorical data
+        \item Requires little data preparation
+    \end{itemize}
+    
+    \item Disadvantages of decision trees
+    \begin{itemize}
+        \item Can create overly complex trees that do not generalize well
+        \item Unstable: small changes in the data can result in a very different tree
+        \item Biased toward features with more levels (in the case of categorical variables)
+    \end{itemize}
+\end{enumerate}
+
+\section{Ensemble Methods}
+
+\subsection{Bagging (Bootstrap Aggregating)}
+\begin{enumerate}
+    \item Create multiple subsets of the original dataset by sampling with replacement
+    \item Train a separate model on each subset
+    \item Combine predictions by voting (classification) or averaging (regression)
+    \item Reduces variance and helps prevent overfitting
+    \item Random Forests: An extension of bagging that also randomly selects a subset of features for each split
+\end{enumerate}
+
+\subsection{Boosting}
+\begin{enumerate}
+    \item AdaBoost (Adaptive Boosting)
+    \begin{itemize}
+        \item Iteratively trains weak learners, focusing on misclassified examples
+        \item Assigns weights to training examples, increasing weights for misclassified instances
+        \item Combines weak learners into a strong learner by weighted majority voting
+    \end{itemize}
+    
+    \item Gradient Boosting
+    \begin{itemize}
+        \item Builds trees sequentially, with each tree correcting the errors of the previous ones
+        \item Optimizes an arbitrary differentiable loss function
+        \item Popular implementations include XGBoost, LightGBM, and CatBoost
+    \end{itemize}
+\end{enumerate}
+
+\section{Clustering and Similarity}
+
+\subsection{Distance Metrics}
+\begin{enumerate}
+    \item Euclidean distance: $d(x,y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}$
+    \begin{itemize}
+        \item Straight-line distance between two points in Euclidean space
+        \item Sensitive to the scale of the features
+    \end{itemize}
+    
+    \item Manhattan distance: $d(x,y) = \sum_{i=1}^n |x_i - y_i|$
+    \begin{itemize}
+        \item Sum of the absolute differences of the coordinates
+        \item Less sensitive to outliers compared to Euclidean distance
+    \end{itemize}
+    
+    \item Cosine similarity: $\text{similarity} = \frac{x \cdot y}{\|x\| \|y\|}$
+    \begin{itemize}
+        \item Measures the cosine of the angle between two vectors
+        \item Useful for high-dimensional data and when the magnitude of the vectors is not important
+    \end{itemize}
+    
+    \item Jaccard similarity: $J(A,B) = \frac{|A \cap B|}{|A \cup B|}$
+    \begin{itemize}
+        \item Measures similarity between sets
+        \item Useful for comparing categorical data or binary vectors
+    \end{itemize}
+\end{enumerate}
+
+\subsection{K-Means Clustering}
+\begin{enumerate}
+    \item Algorithm steps
+    \begin{itemize}
+        \item Initialize K cluster centers randomly
+        \item Assign each point to the nearest cluster center
+        \item Update cluster centers to be the mean of assigned points
+        \item Repeat steps 2-3 until convergence or maximum iterations reached
+    \end{itemize}
+    
+    \item Initialization methods
+    \begin{itemize}
+        \item Random initialization: Choose K points randomly as initial centers
+        \item K-means++: Choose initial centers probabilistically, favoring points far from existing centers
+    \end{itemize}
+    
+    \item Choosing K (elbow method)
+    \begin{itemize}
+        \item Plot within-cluster sum of squares (WCSS) vs. K
+        \item Look for "elbow" point where WCSS starts to level off
+    \end{itemize}
+    
+    \item Limitations of K-means
+    \begin{itemize}
+        \item Sensitive to initial conditions
+        \item Assumes spherical clusters
+        \item May converge to local optima
+        \item Requires specifying K in advance
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Hierarchical Clustering}
+\begin{enumerate}
+    \item Agglomerative vs. Divisive
+    \begin{itemize}
+        \item Agglomerative: Bottom-up approach, start with each point as a cluster and merge
+        \item Divisive: Top-down approach, start with all points in one cluster and split
+    \end{itemize}
+    
+    \item Linkage methods
+    \begin{itemize}
+        \item Single linkage: Minimum distance between clusters
+        \item Complete linkage: Maximum distance between clusters
+        \item Average linkage: Average distance between all pairs of points in two clusters
+    \end{itemize}
+    
+    \item Dendrogram interpretation
+    \begin{itemize}
+        \item Tree-like diagram showing hierarchical relationship between clusters
+        \item Height of merge represents dissimilarity between clusters
+        \item Can cut dendrogram at different heights to obtain different numbers of clusters
+    \end{itemize}
+\end{enumerate}
+
+\section{Dimensionality Reduction}
+
+\subsection{Principal Component Analysis (PCA)}
+\begin{enumerate}
+    \item Covariance matrix
+    \begin{itemize}
+        \item Symmetric matrix representing pairwise covariances between features
+        \item Eigendecomposition of covariance matrix yields principal components
+    \end{itemize}
+    
+    \item Eigenvectors and eigenvalues
+    \begin{itemize}
+        \item Eigenvectors represent directions of maximum variance
+        \item Eigenvalues represent amount of variance explained by each eigenvector
+    \end{itemize}
+    
+    \item Choosing number of components
+    \begin{itemize}
+        \item Based on cumulative explained variance ratio
+        \item Scree plot: Look for elbow point in explained variance vs. number of components
+    \end{itemize}
+    
+    \item Relationship to SVD
+    \begin{itemize}
+        \item PCA can be computed using Singular Value Decomposition (SVD)
+        \item SVD decomposes matrix X into U, Σ, and V^T
+        \item Principal components are columns of V
+    \end{itemize}
+\end{enumerate}
+
+\section{Recommender Systems}
+
+\subsection{Collaborative Filtering}
+\begin{enumerate}
+    \item User-based collaborative filtering
+    \begin{itemize}
+        \item Find similar users based on rating patterns
+        \item Predict ratings based on ratings of similar users
+    \end{itemize}
+    
+    \item Item-based collaborative filtering
+    \begin{itemize}
+        \item Find similar items based on user ratings
+        \item Predict ratings based on user's ratings of similar items
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Matrix Factorization}
+\begin{enumerate}
+    \item SVD (Singular Value Decomposition)
+    \begin{itemize}
+        \item Factorize user-item matrix into user and item latent factor matrices
+        \item Can handle missing values through iterative methods
+    \end{itemize}
+    
+    \item Alternating Least Squares (ALS)
+    \begin{itemize}
+        \item Iteratively solve for user and item factors while holding the other fixed
+        \item Can be parallelized for large-scale problems
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Content-Based Filtering}
+\begin{enumerate}
+    \item Feature extraction
+    \begin{itemize}
+        \item Extract relevant features from item descriptions or metadata
+        \item Can use techniques like TF-IDF for text data
+    \end{itemize}
+    
+    \item Similarity measures
+    \begin{itemize}
+        \item Cosine similarity, Jaccard similarity, etc.
+        \item Compare item features to user preferences or previously liked items
+    \end{itemize}
+\end{enumerate}
+
+\section{Deep Learning}
+
+\subsection{Neural Network Basics}
+\begin{enumerate}
+    \item Activation functions
+    \begin{itemize}
+        \item ReLU: max(0, x)
+        \item Sigmoid: 1 / (1 + e^(-x))
+        \item Tanh: (e^x - e^(-x)) / (e^x + e^(-x))
+    \end{itemize}
+    
+    \item Backpropagation
+    \begin{itemize}
+        \item Efficient algorithm for computing gradients in neural networks
+        \item Uses chain rule to propagate errors backwards through the network
+    \end{itemize}
+    
+    \item Gradient descent variants
+    \begin{itemize}
+        \item Stochastic Gradient Descent (SGD): Update weights after each sample
+        \item Mini-batch SGD: Update weights after processing a small batch of samples
+        \item Adam: Adaptive learning rate method
+        \item RMSprop: Adaptive learning rate method that addresses issues with AdaGrad
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Convolutional Neural Networks (CNNs)}
+\begin{enumerate}
+    \item Convolutional layers
+    \begin{itemize}
+        \item Apply filters to input to extract features
+        \item Share weights across spatial dimensions
+        \item Reduce number of parameters compared to fully connected layers
+    \end{itemize}
+    
+    \item Pooling layers
+    \begin{itemize}
+        \item Reduce spatial dimensions of feature maps
+        \item Max pooling: Take maximum value in pooling window
+        \item Average pooling: Take average value in pooling window
+    \end{itemize}
+    
+    \item Fully connected layers
+    \begin{itemize}
+        \item Usually used at the end of CNN for classification
+        \item Connect all neurons from previous layer to all neurons in current layer
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Transfer Learning}
+\begin{enumerate}
+    \item Fine-tuning
+    \begin{itemize}
+        \item Start with pre-trained model on large dataset
+        \item Replace and retrain final layers on new task
+        \item Optionally fine-tune earlier layers with small learning rate
+    \end{itemize}
+    
+    \item Feature extraction
+    \begin{itemize}
+        \item Use pre-trained model as fixed feature extractor
+        \item Train new classifier on extracted features for new task
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Regularization Techniques}
+\begin{enumerate}
+    \item Dropout
+    \begin{itemize}
+        \item Randomly set a fraction of neurons to zero during training
+        \item Prevents co-adaptation of neurons
+        \item Acts as an ensemble method
+    \end{itemize}
+    
+    \item Batch normalization
+    \begin{itemize}
+        \item Normalize activations of each layer
+        \item Reduces internal covariate shift
+        \item Allows higher learning rates and faster convergence
+    \end{itemize}
+    
+    \item L1/L2 regularization
+    \begin{itemize}
+        \item Add penalty term to loss function based on weight magnitudes
+        \item L1: Encourages sparsity
+        \item L2: Encourages smaller weights overall
+    \end{itemize}
+    
+    \item Early stopping
+    \begin{itemize}
+        \item Stop training when validation error starts to increase
+        \item Prevents overfitting by avoiding unnecessary training iterations
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
