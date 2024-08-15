@@ -1,4 +1,4 @@
-# Brain Tissue Protein Analysis
+# CSE 416
 
 This project analyzes protein quantity measurements from brain tissue samples across multiple regions using Principal Component Analysis (PCA).
 
