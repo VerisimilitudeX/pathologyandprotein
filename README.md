@@ -1,5 +1,3 @@
-# University of Washington CSE 416: Introduction to Machine Learning
-
 This project analyzes protein quantity measurements from brain tissue samples across multiple regions using Principal Component Analysis (PCA).
 
 ## Setup
