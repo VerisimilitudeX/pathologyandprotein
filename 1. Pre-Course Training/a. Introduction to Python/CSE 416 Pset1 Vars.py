@@ -3,7 +3,7 @@ Task 1:
 Fix the errors in the if-else statement below
 """
 def boolean(x:bool, y:bool) -> str:
-    # TODO
+    # 
     if (x and y):
         result = "cats"
     elif (x or y):
