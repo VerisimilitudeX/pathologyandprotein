@@ -1,4 +1,5 @@
-https://github.com/VerisimilitudeX/pathologyandprotein/blob/main/instructions.mp4
+
+[![Watch the video](https://img.youtube.com/vi/21HKT9aV02E/0.jpg)](https://www.youtube.com/watch?v=21HKT9aV02E)
 
 This project analyzes protein quantity measurements from brain tissue samples across multiple regions using Principal Component Analysis (PCA).
 
